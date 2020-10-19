@@ -1,5 +1,7 @@
 import argparse
 import template
+import torch
+import numpy
 
 parser = argparse.ArgumentParser(description='EDSR and MDSR')
 
@@ -19,7 +21,7 @@ parser.add_argument('--seed', type=int, default=1,
                     help='random seed')
 
 # Data specifications
-parser.add_argument('--dir_data', type=str, default='../../../dataset',
+parser.add_argument('--dir_data', type=str, default='../dataset',
                     help='dataset directory')
 parser.add_argument('--dir_demo', type=str, default='../test',
                     help='demo image directory')
@@ -143,6 +145,10 @@ parser.add_argument('--save_results', action='store_true',
 parser.add_argument('--save_gt', action='store_true',
                     help='save low-resolution and high-resolution images together')
 
+parser.add_argument('--import_dir', type=str, default='test', help='file dir to import from')
+parser.add_argument('--double', action='store_true', help='stack 2 fdsrs')
+parser.add_argument('--original', action='store_true', help='use original EDSR')  
+
 args = parser.parse_args()
 template.set_template(args)
 
@@ -158,4 +164,27 @@ for arg in vars(args):
         vars(args)[arg] = True
     elif vars(args)[arg] == 'False':
         vars(args)[arg] = False
+
+
+# comment for original EDSR
+if args.original!= True:
+    NETWORK_DIR = 'NAS_exports/'+args.import_dir
+    ##################### Exported Architecture ##########################
+    # = torch.tensor([index of activated operation])
+    args.op1     = torch.load(NETWORK_DIR+'/NoAct1.pt') 
+    args.op2     = torch.load(NETWORK_DIR+'/NoAct2.pt')
+    args.op_last = torch.load(NETWORK_DIR+'/NoAct3.pt')
+
+    args.P  = numpy.load(NETWORK_DIR+'/p.npy'  , allow_pickle=True)
+    args.R  = numpy.load(NETWORK_DIR+'/r.npy'  , allow_pickle=True)
+    args.T  = numpy.load(NETWORK_DIR+'/t.npy'  , allow_pickle=True)
+    args.PR = numpy.load(NETWORK_DIR+'/pr.npy' , allow_pickle=True)
+    args.PT = numpy.load(NETWORK_DIR+'/pt.npy' , allow_pickle=True)
+    args.RT = numpy.load(NETWORK_DIR+'/rt.npy' , allow_pickle=True)
+    args.PRT= numpy.load(NETWORK_DIR+'/prt.npy', allow_pickle=True)
+    # args.NOP= numpy.load(NETWORK_DIR+'/nop.npy', allow_pickle=True)
+
+    args.skip = torch.load(NETWORK_DIR+'/skip.pt')
+    args.resconv2 = torch.load(NETWORK_DIR+'/resconv2.pt')
+    args.resconv3 = torch.load(NETWORK_DIR+'/resconv3.pt')
 
